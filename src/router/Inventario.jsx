@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 export const Inventario = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,28 +15,33 @@ export const Inventario = () => {
         if (!token || !countryURL) {
           throw new Error("Token o URL del país no encontrados");
         }
+
         const response = await fetch(
           `${countryURL}/api/open-api/v1/catalog/products`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
+              limit: "50",
+              offset: "0",
             },
           }
         );
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
             errorData.message || "Error obteniendo los productos"
           );
         }
+
         const data = await response.json();
         setProductos(data.data);
-        console.log(data.data); // Loguear los datos recibidos
         setLoading(false);
       } catch (error) {
+        console.error("Error detallado:", error);
         alert(
-          `Error obteniendo los productos. Por favor, validar si tus credenciales son correctas o si el país es el indicado. Serás redirigido al login. Detalle del error: ${error.message}`
+          `Error obteniendo los productos. Serás redirigido al login. Detalle del error: ${error.message}`
         );
         setLoading(false);
         navigate("/login");
@@ -43,6 +49,18 @@ export const Inventario = () => {
     };
     fetchProductos();
   }, [navigate]);
+
+  const truncateText = (text, limit) => {
+    if (text.length <= limit) {
+      return text;
+    }
+    return text.slice(0, limit) + "...";
+  };
+
+  const handleDetailsClick = (producto) => {
+    setSelectedProduct(producto);
+    document.getElementById("my_modal_3").showModal();
+  };
 
   if (loading) {
     return (
@@ -58,22 +76,19 @@ export const Inventario = () => {
   return (
     <>
       <div className="container mx-auto px-4">
-        Aquí estarán todos tus productos
         <div className="overflow-x-auto">
           <button className="btn btn-outline btn-primary">
             <Link to="/productos-crear">Añadir Productos</Link>
           </button>
-          <button className="btn btn-outline btn-secundary ml-5">
+          <button className="btn btn-outline btn-secondary ml-5">
             ♻ Actualizar
           </button>
 
           <table className="table">
-            {/* head */}
             <thead>
               <tr>
                 <th></th>
-                <th>Imagen</th>
-                <th>Nombre</th>
+                <th>Imagen / Nombre</th>
                 <th>EAN</th>
                 <th>SKU</th>
                 <th>Descripción</th>
@@ -97,10 +112,7 @@ export const Inventario = () => {
                       <div className="avatar">
                         <div className="mask mask-squircle h-12 w-12">
                           <img
-                            src={
-                              producto.images[0]?.path ||
-                              "https://via.placeholder.com/150"
-                            }
+                            src={producto.images[0]?.path || "No disponible"}
                             alt={producto.name}
                           />
                         </div>
@@ -110,57 +122,39 @@ export const Inventario = () => {
                       </div>
                     </div>
                   </td>
+                  <td>{producto.ean || "No disponible"}</td>
+                  <td>{producto.sku || "No disponible"}</td>
                   <td>
-                    {producto.longDescription}
-                    <br />
+                    {truncateText(producto.longDescription, 50) ||
+                      "No disponible"}
                   </td>
-                  <td>{producto.ean}</td>
-                  <td>{producto.sku}</td>
-                  <td>{producto.longDescription}</td>
-                  <td>{producto.stock}</td>
-                  <td>{producto.price}</td>
-                  <td>{producto.sale_price}</td>
+                  <td>{producto.stock || "No disponible"}</td>
+                  <td>{producto.price || "No disponible"}</td>
+                  <td>{producto.price_desc || "No disponible"}</td>
                   <td>
-                    {/* You can open the modal using document.getElementById('ID').showModal() method */}
                     <button
                       className="btn"
-                      onClick={() =>
-                        document.getElementById("my_modal_3").showModal()
-                      }
+                      onClick={() => handleDetailsClick(producto)}
                     >
                       Detalles
                     </button>
                     <dialog id="my_modal_3" className="modal">
                       <div className="modal-box">
                         <form method="dialog">
-                          {/* if there is a button in form, it will close the modal */}
                           <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
                             ✕
                           </button>
                         </form>
                         <h3 className="font-bold text-lg">JSON Completo!</h3>
-                        <p className="py-4">
-                          <strong>Nombre:</strong> {producto.name}
-                          <br />
-                          <strong>Descripción:</strong>{" "}
-                          {producto.longDescription}
-                          <br />
-                          <strong>EAN:</strong> {producto.ean}
-                          <br />
-                          <strong>SKU:</strong> {producto.sku}
-                          <br />
-                          <strong>Stock:</strong> {producto.stock}
-                          <br />
-                          <strong>Precio:</strong> {producto.price}
-                          <br />
-                          <strong>Precio con Descuento:</strong>{" "}
-                          {producto.sale_price}
-                        </p>
+                        <textarea
+                          className="w-full h-64 p-2 border rounded mt-4"
+                          value={JSON.stringify(selectedProduct, null, 2)}
+                          readOnly
+                        />
                       </div>
                     </dialog>
                   </td>
                   <td>
-                    {/* You can open the modal using document.getElementById('ID').showModal() method */}
                     <button
                       className="btn"
                       onClick={() =>
@@ -172,22 +166,18 @@ export const Inventario = () => {
                     <dialog id="my_modal_4" className="modal">
                       <div className="modal-box">
                         <form method="dialog">
-                          {/* if there is a button in form, it will close the modal */}
                           <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
                             ✕
                           </button>
                         </form>
                         <h3 className="font-bold text-lg">Hello!</h3>
-                        <p className="py-4">
-                          Press ESC key or click on ✕ button to close
-                        </p>
+                        <p className="py-4">Sección pendiente de trabajar</p>
                       </div>
                     </dialog>
                   </td>
                 </tr>
               ))}
             </tbody>
-            {/* foot */}
             <tfoot>
               <tr>
                 <th></th>
