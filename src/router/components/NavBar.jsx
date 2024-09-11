@@ -136,7 +136,7 @@ export const NavBar = () => {
                     </Link>
                   </li>
                   <li>
-                    <Link to="/tiendas" href="/Tiendas">
+                    <Link to="/tiendas" href="/InvCrearProducto copy">
                       Tiendas disponibles
                     </Link>
                   </li>
