@@ -975,18 +975,31 @@ export const InvCrearProducto = () => {
 
             <button
               className="btn btn-active btn-secondary"
-              onClick={() => {
-                selectedStores.forEach((storeId) => {
+              onClick={async () => {
+                const promises = selectedStores.map(async (storeId) => {
                   const store = stores.find((s) => s.id === storeId);
-                  associateProductWithStore(
-                    storeId,
-                    productCreated.id,
-                    store.price,
-                    store.sale_price,
-                    store.stock
-                  );
+                  if (store) {
+                    await associateProductWithStore(
+                      storeId,
+                      productCreated.id,
+                      store.price,
+                      store.sale_price,
+                      store.stock
+                    );
+                  } else {
+                    console.error(`Tienda con ID ${storeId} no encontrada.`);
+                  }
                 });
-                alert("Productos asociados correctamente");
+
+                try {
+                  await Promise.all(promises);
+                  alert("Productos asociados correctamente");
+                } catch (error) {
+                  console.error("Error asociando productos:", error);
+                  alert(
+                    "Error asociando productos. Por favor, inténtalo de nuevo."
+                  );
+                }
               }}
             >
               Asociar producto a tiendas
